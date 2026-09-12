@@ -1,10 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo de Frete</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; }
+        form { display: flex; flex-direction: column; gap: 12px; }
+        label { display: flex; flex-direction: column; font-size: 14px; font-weight: 600; gap: 4px; }
+        input, select, button { padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 8px; }
+        button:hover { background-color: #0056b3; }
+        .resultado { margin-top: 16px; padding: 12px; border-radius: 4px; display: none; }
+        .sucesso { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .erro { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
 </head>
 <body>
+    <h2>Calcular Frete</h2>
+    <form id="formFrete">
+        <label>
+            Valor do Carrinho (R$):
+            <input type="number" id="carrinho" step="0.01" required placeholder="Ex: 150.00">
+        </label>
 
+        <label>
+            Região:
+            <select id="regiao" required>
+                <option value="Norte">Norte</option>
+                <option value="Nordeste">Nordeste</option>
+                <option value="Centro-Oeste">Centro-Oeste</option>
+                <option value="Sudeste">Sudeste</option>
+                <option value="Sul">Sul</option>
+            </select>
+        </label>
+
+        <label>
+            Valor do Frete Base (R$, opcional):
+            <input type="number" id="freteBase" step="0.01" placeholder="Usar valor padrão">
+        </label>
+
+        <button type="submit">Calcular</button>
+    </form>
+
+    <div id="boxResultado" class="resultado"></div>
+
+    <script>
+        document.getElementById('formFrete').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const box = document.getElementById('boxResultado');
+            box.style.display = 'none';
+            box.className = 'resultado';
+
+            const payload = {
+                valor_carrinho: parseFloat(document.getElementById('carrinho').value),
+                regiao: document.getElementById('regiao').value,
+                valor_frete_base: document.getElementById('freteBase').value || null
+            };
+
+            try {
+                const response = await fetch('/calcular', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                box.style.display = 'block';
+
+                if (response.ok && data.sucesso) {
+                    box.classList.add('sucesso');
+                    box.textContent = `Frete a pagar: R$ ${data.frete.toFixed(2)}`;
+                } else {
+                    box.classList.add('erro');
+                    box.textContent = data.erro || 'Falha ao calcular.';
+                }
+            } catch (err) {
+                box.style.display = 'block';
+                box.classList.add('erro');
+                box.textContent = 'Erro ao conectar com o servidor.';
+            }
+        });
+    </script>
 </body>
 </html>
